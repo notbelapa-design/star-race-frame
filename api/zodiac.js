@@ -53,9 +53,13 @@ function capitalise(s) {
  * @returns {string}
  */
 function buildFrame(title, description, buttons) {
+  
   let metaTags = '';
   metaTags += `<meta property="og:title" content="${title}" />\n`;
   metaTags += `<meta property="og:description" content="${description}" />\n`;
+  
+  
+  
   // Declare this as a vNext frame
   metaTags += `<meta name="fc:frame" content="vNext" />\n`;
   // Loop over buttons and add meta tags. Only up to 4 buttons are allowed.
@@ -107,3 +111,6 @@ module.exports = async (req, res) => {
   res.setHeader('Content-Type', 'text/html');
   return res.status(200).send(html);
 };
+
+
+
