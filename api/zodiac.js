@@ -1,8 +1,8 @@
 const { URL } = require('url');
 
-// CT‑flavoured captions for each zodiac sign
+// Witty messages for each sign
 const SIGN_MESSAGES = {
-  aries: "Aries apes into every new mint like they're slaying a boss, then asks 'When Lambo?' 30 minutes later.",
+  aries: "Aries apes into every new mint like they're slaying a boss, then asks 'When Lambo?' 30 minutes later.",
   taurus: 'Taurus hodlers treat bear markets like a buffet—accumulation season never ends for these stubborn bulls.',
   gemini: 'Gemini holders represent duality of holding forever and buying more.',
   cancer: 'Cancer stashes their bags like a crab; sideways markets are their natural habitat and they love it.',
@@ -16,7 +16,23 @@ const SIGN_MESSAGES = {
   pisces: 'Pisces believe in cosmic charts and RSI alignment; if Mercury’s in retrograde, they blame the red candles.'
 };
 
-// Divide the 12 signs into four pages of three buttons each
+// Collect links for each sign (Base addresses you provided)
+const SIGN_LINKS = {
+  aries:      'https://zora.co/coin/base:0x64fdc8dc83b272a3613ad1b029baa04fa77fe9e2',
+  taurus:     'https://zora.co/coin/base:0xc9610c793f9dd4d99e0b6249d62d22b0d9e5adeb',
+  gemini:     'https://zora.co/coin/base:0xca3cb7f5e086c7dcb2733834a32da7469d0399c3',
+  cancer:     'https://zora.co/coin/base:0xf628572d8c72f472ada175a382b4c31363184ca0',
+  leo:        'https://zora.co/coin/base:0x75aba7910cb10c248479968569c18b99b8e6dbbc',
+  virgo:      'https://zora.co/coin/base:0x37353a08eac909fefa1d57d171e245625826a684',
+  libra:      'https://zora.co/coin/base:0xaa1a1efef9338731dd662c2fd4dab41b5696484862',
+  scorpio:    'https://zora.co/coin/base:0xc4f924ac9e7f0bbf74dcf1b11e4d84ff91cd63ba',
+  sagittarius:'https://zora.co/coin/base:0x82878ceafd561b1e464ab7db152569cdd742a5c0',
+  capricorn:  'https://zora.co/coin/base:0x82839fc26cee917c03da1c9944b2965589805486',
+  aquarius:   'https://zora.co/coin/base:0x433f3d39b8eab3c70199d220ac20ef3416bc193a',
+  pisces:     'https://zora.co/coin/base:0x4164fcb7f7047f4d39d4f6e77def100c80b40dcb'
+};
+
+// Group signs into pages of three
 const SIGN_PAGES = [
   ['aries', 'taurus', 'gemini'],
   ['cancer', 'leo', 'virgo'],
@@ -24,14 +40,12 @@ const SIGN_PAGES = [
   ['capricorn', 'aquarius', 'pisces']
 ];
 
-// Capitalise the first letter
-function capitalise(s) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
+// Capitalise helper
+const capitalise = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-// Build the frame HTML with meta tags and buttons
+// Frame generator
 function buildFrame(title, description, buttons) {
-  const imageUrl = 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=600&q=80'; // publicly accessible starfield
+  const imageUrl = 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=600&q=80';
   let meta = '';
   meta += `<meta property="og:title" content="${title}" />\n`;
   meta += `<meta property="og:description" content="${description}" />\n`;
@@ -42,51 +56,52 @@ function buildFrame(title, description, buttons) {
     const n = idx + 1;
     meta += `<meta name="fc:frame:button:${n}" content="${btn.label}" />\n`;
     meta += `<meta name="fc:frame:button:${n}:action" content="${btn.action}" />\n`;
-    if (btn.target) meta += `<meta name="fc:frame:button:${n}:target" content="${btn.target}" />\n`;
+    if (btn.target) {
+      meta += `<meta name="fc:frame:button:${n}:target" content="${btn.target}" />\n`;
+    }
   });
   return `<!DOCTYPE html><html><head><meta charset="utf-8" />${meta}</head><body></body></html>`;
 }
 
-// Main handler
 module.exports = async (req, res) => {
   try {
-    // Use a template literal for the base URL so host is interpolated
+    // Properly build URL with a template literal to include the host
     const urlObj = new URL(req.url, `http://${req.headers.host}`);
     const sign = urlObj.searchParams.get('sign');
     const pageParam = parseInt(urlObj.searchParams.get('page'), 10) || 1;
     const pageIndex = Math.min(Math.max(pageParam, 1), SIGN_PAGES.length) - 1;
 
-    // If a sign is selected, return its description and collect link
+    // If a sign is selected, return its fortune and collect link
     if (sign && SIGN_MESSAGES[sign]) {
       const name = capitalise(sign);
       const message = SIGN_MESSAGES[sign];
       const buttons = [
         { label: 'Pick Another', action: 'post', target: '/api/zodiac?page=1' },
-        { label: `Collect ${name}`, action: 'link', target: `https://zora.co/coin/base:${sign}` }
+        { label: `Collect ${name}`, action: 'link', target: SIGN_LINKS[sign] }
       ];
-      const title = `${name} Cosmic Vibe`;
-      const description = message;
-      const html = buildFrame(title, description, buttons);
+      const html = buildFrame(`${name} Cosmic Vibe`, message, buttons);
       res.setHeader('Content-Type', 'text/html');
       return res.status(200).end(html);
     }
 
-    // Otherwise, show a page of signs (max 3 per page)
+    // Otherwise, present a page of sign buttons plus navigation
     const group = SIGN_PAGES[pageIndex];
-    const buttons = group.map((s) => ({ label: capitalise(s), action: 'post', target: `/api/zodiac?sign=${s}` }));
+    const buttons = group.map((s) => ({
+      label: capitalise(s),
+      action: 'post',
+      target: `/api/zodiac?sign=${s}`
+    }));
     if (pageIndex < SIGN_PAGES.length - 1) {
       buttons.push({ label: 'Next', action: 'post', target: `/api/zodiac?page=${pageIndex + 2}` });
     } else {
       buttons.push({ label: 'Start Over', action: 'post', target: '/api/zodiac?page=1' });
     }
-    const title = 'Pick your zodiac sign';
-    const description = 'Select a sign to see its CT‑style fortune.';
-    const html = buildFrame(title, description, buttons);
+    const html = buildFrame('Pick your zodiac sign', 'Select a sign to see its CT‑style fortune.', buttons);
     res.setHeader('Content-Type', 'text/html');
     res.status(200).end(html);
   } catch (err) {
     console.error(err);
-    // Return 500 to Farcaster; the client will show "Unknown error"
     res.status(500).send('Internal error');
   }
 };
+
