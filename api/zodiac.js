@@ -53,13 +53,12 @@ function capitalise(s) {
  * @returns {string}
  */
 function buildFrame(title, description, buttons) {
-  
   let metaTags = '';
   metaTags += `<meta property="og:title" content="${title}" />\n`;
   metaTags += `<meta property="og:description" content="${description}" />\n`;
-  
-  
-  
+  // Provide an image so Farcaster knows this is a frame
+  metaTags += `<meta property="og:image" content="https://cdn.jsdelivr.net/gh/farcaster/todo/image-placeholder.png" />\n`;
+  metaTags += `<meta name="fc:frame:image" content="https://cdn.jsdelivr.net/gh/farcaster/todo/image-placeholder.png" />\n`;
   // Declare this as a vNext frame
   metaTags += `<meta name="fc:frame" content="vNext" />\n`;
   // Loop over buttons and add meta tags. Only up to 4 buttons are allowed.
@@ -73,6 +72,7 @@ function buildFrame(title, description, buttons) {
   });
   return `<!DOCTYPE html><html><head><meta charset="utf-8" />${metaTags}</head><body></body></html>`;
 }
+
 
 module.exports = async (req, res) => {
   // Parse the request URL to extract query parameters
