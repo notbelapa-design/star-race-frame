@@ -1,22 +1,18 @@
-const { URL } = require('url');
-
-// Witty messages for each sign
 const SIGN_MESSAGES = {
-  aries: "Aries apes into every new mint like they're slaying a boss, then asks 'When Lambo?' 30 minutes later.",
-  taurus: 'Taurus hodlers treat bear markets like a buffet—accumulation season never ends for these stubborn bulls.',
-  gemini: 'Gemini holders represent duality of holding forever and buying more.',
-  cancer: 'Cancer stashes their bags like a crab; sideways markets are their natural habitat and they love it.',
-  leo: 'Leo calls their bag the king of NFTs and expects everyone else to bow to their floor price.',
-  virgo: 'Virgo hodlers annotate their wallet activity with spreadsheets; analysis paralysis but make it crypto.',
-  libra: "Libra can't decide between staking and farming, so they do both and call it a balanced portfolio.",
-  scorpio: 'Scorpio investors buy your bags in silence and sell in revenge; trust them at your own risk.',
-  sagittarius: 'Sagittarius sets off on every airdrop quest like a cosmic crusade—no risk too far, no wallet too degen.',
-  capricorn: 'Capricorns treat yield farming like a 9‑to‑5 job—always grinding, even when the market’s asleep.',
-  aquarius: 'Aquarius invents new chains in their mind and shills them before the whitepaper even exists.',
-  pisces: 'Pisces believe in cosmic charts and RSI alignment; if Mercury’s in retrograde, they blame the red candles.'
+  aries:      "Aries apes into every new mint like they're slaying a boss, then asks 'When Lambo?' 30 minutes later.",
+  taurus:     'Taurus hodlers treat bear markets like a buffet—accumulation season never ends for these stubborn bulls.',
+  gemini:     'Gemini holders represent duality of holding forever and buying more.',
+  cancer:     'Cancer stashes their bags like a crab; sideways markets are their natural habitat and they love it.',
+  leo:        'Leo calls their bag the king of NFTs and expects everyone else to bow to their floor price.',
+  virgo:      'Virgo hodlers annotate their wallet activity with spreadsheets; analysis paralysis but make it crypto.',
+  libra:      "Libra can't decide between staking and farming, so they do both and call it a balanced portfolio.",
+  scorpio:    'Scorpio investors buy your bags in silence and sell in revenge; trust them at your own risk.',
+  sagittarius:'Sagittarius sets off on every airdrop quest like a cosmic crusade—no risk too far, no wallet too degen.',
+  capricorn:  'Capricorns treat yield farming like a 9‑to‑5 job—always grinding, even when the market’s asleep.',
+  aquarius:   'Aquarius invents new chains in their mind and shills them before the whitepaper even exists.',
+  pisces:     'Pisces believe in cosmic charts and RSI alignment; if Mercury’s in retrograde, they blame the red candles.'
 };
 
-// Collect links for each sign (Base addresses you provided)
 const SIGN_LINKS = {
   aries:      'https://zora.co/coin/base:0x64fdc8dc83b272a3613ad1b029baa04fa77fe9e2',
   taurus:     'https://zora.co/coin/base:0xc9610c793f9dd4d99e0b6249d62d22b0d9e5adeb',
@@ -32,7 +28,7 @@ const SIGN_LINKS = {
   pisces:     'https://zora.co/coin/base:0x4164fcb7f7047f4d39d4f6e77def100c80b40dcb'
 };
 
-// Group signs into pages of three
+// Pages of three signs each
 const SIGN_PAGES = [
   ['aries', 'taurus', 'gemini'],
   ['cancer', 'leo', 'virgo'],
@@ -40,18 +36,16 @@ const SIGN_PAGES = [
   ['capricorn', 'aquarius', 'pisces']
 ];
 
-// Capitalise helper
 const capitalise = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-// Frame generator
 function buildFrame(title, description, buttons) {
-  const imageUrl = 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=600&q=80';
+  const img = 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=600&q=80';
   let meta = '';
   meta += `<meta property="og:title" content="${title}" />\n`;
   meta += `<meta property="og:description" content="${description}" />\n`;
-  meta += `<meta property="og:image" content="${imageUrl}" />\n`;
+  meta += `<meta property="og:image" content="${img}" />\n`;
   meta += `<meta name="fc:frame" content="vNext" />\n`;
-  meta += `<meta name="fc:frame:image" content="${imageUrl}" />\n`;
+  meta += `<meta name="fc:frame:image" content="${img}" />\n`;
   buttons.forEach((btn, idx) => {
     const n = idx + 1;
     meta += `<meta name="fc:frame:button:${n}" content="${btn.label}" />\n`;
@@ -65,26 +59,27 @@ function buildFrame(title, description, buttons) {
 
 module.exports = async (req, res) => {
   try {
-    // Properly build URL with a template literal to include the host
-    const urlObj = new URL(req.url, `http://${req.headers.host}`);
-    const sign = urlObj.searchParams.get('sign');
-    const pageParam = parseInt(urlObj.searchParams.get('page'), 10) || 1;
+    // Parse the query string manually; ignore host completely
+    const queryString = req.url.split('?')[1] || '';
+    const params = new URLSearchParams(queryString);
+    const sign = params.get('sign');
+    const pageParam = parseInt(params.get('page') || '1', 10);
     const pageIndex = Math.min(Math.max(pageParam, 1), SIGN_PAGES.length) - 1;
 
-    // If a sign is selected, return its fortune and collect link
+    // If a sign is selected
     if (sign && SIGN_MESSAGES[sign]) {
       const name = capitalise(sign);
-      const message = SIGN_MESSAGES[sign];
+      const description = SIGN_MESSAGES[sign];
       const buttons = [
         { label: 'Pick Another', action: 'post', target: '/api/zodiac?page=1' },
         { label: `Collect ${name}`, action: 'link', target: SIGN_LINKS[sign] }
       ];
-      const html = buildFrame(`${name} Cosmic Vibe`, message, buttons);
+      const html = buildFrame(`${name} Cosmic Vibe`, description, buttons);
       res.setHeader('Content-Type', 'text/html');
       return res.status(200).end(html);
     }
 
-    // Otherwise, present a page of sign buttons plus navigation
+    // Otherwise display a page of sign buttons
     const group = SIGN_PAGES[pageIndex];
     const buttons = group.map((s) => ({
       label: capitalise(s),
