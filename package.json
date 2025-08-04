@@ -2,6 +2,6 @@
   "name": "star-race-frame",
   "version": "1.0.0",
   "scripts": {
-    "start": "node star_race_dynamic_frame_server.js"
+    // "start": "node star_race_dynamic_frame_server.js"
   }
 }
