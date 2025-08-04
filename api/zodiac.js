@@ -13,6 +13,7 @@ const SIGN_MESSAGES = {
   pisces:     'Pisces believe in cosmic charts and RSI alignment; if Mercury’s in retrograde, they blame the red candles.'
 };
 
+// Collect links for each sign (Base addresses you provided)
 const SIGN_LINKS = {
   aries:      'https://zora.co/coin/base:0x64fdc8dc83b272a3613ad1b029baa04fa77fe9e2',
   taurus:     'https://zora.co/coin/base:0xc9610c793f9dd4d99e0b6249d62d22b0d9e5adeb',
@@ -28,12 +29,12 @@ const SIGN_LINKS = {
   pisces:     'https://zora.co/coin/base:0x4164fcb7f7047f4d39d4f6e77def100c80b40dcb'
 };
 
-// Pages of three signs each
+// Split signs into pages of three
 const SIGN_PAGES = [
-  ['aries', 'taurus', 'gemini'],
-  ['cancer', 'leo', 'virgo'],
-  ['libra', 'scorpio', 'sagittarius'],
-  ['capricorn', 'aquarius', 'pisces']
+  ['aries','taurus','gemini'],
+  ['cancer','leo','virgo'],
+  ['libra','scorpio','sagittarius'],
+  ['capricorn','aquarius','pisces']
 ];
 
 const capitalise = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -41,45 +42,42 @@ const capitalise = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 function buildFrame(title, description, buttons) {
   const img = 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=600&q=80';
   let meta = '';
-  meta += `<meta property="og:title" content="${title}" />\n`;
-  meta += `<meta property="og:description" content="${description}" />\n`;
-  meta += `<meta property="og:image" content="${img}" />\n`;
-  meta += `<meta name="fc:frame" content="vNext" />\n`;
-  meta += `<meta name="fc:frame:image" content="${img}" />\n`;
+  meta += `<meta property="og:title" content="${title}" />\\n`;
+  meta += `<meta property="og:description" content="${description}" />\\n`;
+  meta += `<meta property="og:image" content="${img}" />\\n`;
+  meta += `<meta name="fc:frame" content="vNext" />\\n`;
+  meta += `<meta name="fc:frame:image" content="${img}" />\\n`;
   buttons.forEach((btn, idx) => {
     const n = idx + 1;
-    meta += `<meta name="fc:frame:button:${n}" content="${btn.label}" />\n`;
-    meta += `<meta name="fc:frame:button:${n}:action" content="${btn.action}" />\n`;
-    if (btn.target) {
-      meta += `<meta name="fc:frame:button:${n}:target" content="${btn.target}" />\n`;
-    }
+    meta += `<meta name="fc:frame:button:${n}" content="${btn.label}" />\\n`;
+    meta += `<meta name="fc:frame:button:${n}:action" content="${btn.action}" />\\n`;
+    if (btn.target) meta += `<meta name="fc:frame:button:${n}:target" content="${btn.target}" />\\n`;
   });
   return `<!DOCTYPE html><html><head><meta charset="utf-8" />${meta}</head><body></body></html>`;
 }
 
 module.exports = async (req, res) => {
   try {
-    // Parse the query string manually; ignore host completely
+    // Manually parse the query string
     const queryString = req.url.split('?')[1] || '';
     const params = new URLSearchParams(queryString);
     const sign = params.get('sign');
-    const pageParam = parseInt(params.get('page') || '1', 10);
-    const pageIndex = Math.min(Math.max(pageParam, 1), SIGN_PAGES.length) - 1;
+    const pageNum = parseInt(params.get('page') || '1', 10);
+    const pageIndex = Math.min(Math.max(pageNum, 1), SIGN_PAGES.length) - 1;
 
-    // If a sign is selected
     if (sign && SIGN_MESSAGES[sign]) {
-      const name = capitalise(sign);
+      const title = `${capitalise(sign)} Cosmic Vibe`;
       const description = SIGN_MESSAGES[sign];
       const buttons = [
         { label: 'Pick Another', action: 'post', target: '/api/zodiac?page=1' },
-        { label: `Collect ${name}`, action: 'link', target: SIGN_LINKS[sign] }
+        { label: `Collect ${capitalise(sign)}`, action: 'link', target: SIGN_LINKS[sign] }
       ];
-      const html = buildFrame(`${name} Cosmic Vibe`, description, buttons);
+      const html = buildFrame(title, description, buttons);
       res.setHeader('Content-Type', 'text/html');
       return res.status(200).end(html);
     }
 
-    // Otherwise display a page of sign buttons
+    // Show a page of sign choices
     const group = SIGN_PAGES[pageIndex];
     const buttons = group.map((s) => ({
       label: capitalise(s),
@@ -93,10 +91,9 @@ module.exports = async (req, res) => {
     }
     const html = buildFrame('Pick your zodiac sign', 'Select a sign to see its CT‑style fortune.', buttons);
     res.setHeader('Content-Type', 'text/html');
-    res.status(200).end(html);
+    return res.status(200).end(html);
   } catch (err) {
     console.error(err);
     res.status(500).send('Internal error');
   }
 };
-
